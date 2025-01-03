@@ -1,34 +1,59 @@
 #!/usr/bin/env nextflow
 
-process TRIMMOMATIC{
+process BOWTIE_INDEX {
 
-    publishDir params.trim_outdir, mode: 'symlink'
+    publishDir params.ref_dir, mode = 'copy'
 
-    conda "bioconda::trimmomatic=0.39"
+    conda 'bioconda::bowtie2'
 
     input:
-        tuple val(sample_id), file(reads)
+        file(reference_fa)
 
     output:
-        tuple val(sample_id), file("${sample_id}_R1_paired.fastq")
-        file("${sample_id}_R1_unpaired.fastq")
-        file("${sample_id}_R2_paired.fastq")
-        file("${sample_id}_R2_unpaired.fastq")
+        path "GRCm38*"
 
     script:
     """
-    trimmomatic PE -phred33 -threads 4 ${reads[0]} ${reads[1]} ${sample_id}_R1_paired.fastq ${sample_id}_R1_unpaired.fastq ${sample_id}_R2_paired.fastq ${sample_id}_R2_unpaired.fastq ILLUMINACLIP:"${params.adapter}":2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15
+    bowtie2-build ${reference_fa} "GRCm38"
     """
 
 }
 
+process BOWTIE {
+
+    publishDir params.aligned_outdir, mode: 'symlink'
+
+    conda 'bioconda::bowtie2'
+
+    input:
+        tuple val(sample_id), path(reads)
+        path(index_files_dir)
+
+    output:
+        tuple val(sample_id), file("*.sam")
+
+    script:
+    """
+    bowtie2 -X "${index_files_dir}/GRCm38" -1 ${reads[0]} -2 ${reads[1]} -S ${sample_id}.sam 
+    """
+
+}
 
 // include modules
 include { FASTQC } from './modules/local/fastqc/main.nf'
+include { TRIMMOMATIC } from './modules/local/trimmomatic/main.nf'
 
 
-workflow{
+workflow {
     paired_fastq_ch = Channel.fromFilePairs("${params.reads_dir}/*.R{1,2}.fastq")
+    reference_fa = Channel.fromPath(params.ref_seq)
+
     FASTQC(paired_fastq_ch)
-    TRIMMOMATIC(paired_fastq_ch)
+
+    trimmed_fq = TRIMMOMATIC(paired_fastq_ch)
+    index = BOWTIE_INDEX(reference_fa)
+    trimmed_fq_tuple = trimmed_fq.map { tuple -> tuple[1] }
+
+    // Pass the trimmed paired files to the BWAMEM process
+    BOWTIE(trimmed_fq_tuple, index)
 }
