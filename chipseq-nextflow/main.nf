@@ -2,19 +2,19 @@
 
 process BOWTIE_INDEX {
 
-    publishDir params.ref_dir, mode = 'copy'
-
     conda 'bioconda::bowtie2'
 
     input:
-        file(reference_fa)
+        path reference_fa
 
     output:
-        path "GRCm38*"
+        path 'bowtie_index/GRCm38*'
 
     script:
     """
-    bowtie2-build ${reference_fa} "GRCm38"
+    mkdir bowtie_index
+
+    bowtie2-build "${reference_fa}" "bowtie_index/GRCm38"
     """
 
 }
@@ -54,6 +54,6 @@ workflow {
     index = BOWTIE_INDEX(reference_fa)
     trimmed_fq_tuple = trimmed_fq.map { tuple -> tuple[1] }
 
-    // Pass the trimmed paired files to the BWAMEM process
+    // pass the trimmed paired files to the BWAMEM process
     BOWTIE(trimmed_fq_tuple, index)
 }
