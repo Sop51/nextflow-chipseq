@@ -14,7 +14,7 @@ process TRIMMOMATIC{
         tuple val(sample_id), file(reads)
 
     output:
-        tuple val(sample_id), file("*trimmed.fastq")
+        tuple val(sample_id), file("${sample_id}_R1_trimmed.fastq"), file("${sample_id}_R2_trimmed.fastq")
 
 
     script:
