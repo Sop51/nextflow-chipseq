@@ -7,7 +7,8 @@ process BAM_COVERAGE {
     conda 'deeptools-env.yaml'
 
     input:
-        tuple val(sample_name), path(bam), path(bai)
+        path bam
+        path index
 
     output:
         path "${bam.baseName}.bw"
@@ -33,7 +34,7 @@ workflow {
     reference_fa = Channel.fromPath(params.ref_seq)
     aligned_files = Channel.fromPath("${params.aligned_outdir}/*.bam")
     aligned_srt_files = Channel.fromPath("${params.srt_bams}/*.bam")
-    bam_and_bai = paired_fastq_ch = Channel.fromFilePairs("${params.srt_bams}/*.{bam,bam.bai}", flat: true)
+    bai_files = Channel.fromPath("${params.srt_bams}/*.bai")
 
     FASTQC(paired_fastq_ch)
     trimmed_fq = TRIMMOMATIC(paired_fastq_ch)
@@ -41,5 +42,6 @@ workflow {
     BOWTIE(trimmed_fq, params.ref_dir)
     SAMTOOLS_SORT(aligned_files)
     SAMTOOLS_INDEX(aligned_srt_files)
+    BAM_COVERAGE(aligned_srt_files, bai_files)
 
 }
