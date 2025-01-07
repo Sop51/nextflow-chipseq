@@ -1,0 +1,9 @@
+name: deeptools-env
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - pip
+    - pip:
+        - deeptools
