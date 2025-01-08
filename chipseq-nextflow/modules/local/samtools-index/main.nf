@@ -14,11 +14,11 @@ process SAMTOOLS_INDEX {
         path bam
 
     output:
-        path "${bam.baseName}.bam.bai"
+        path "${bam.baseName}.bai"
 
     script:
     """
-    samtools index "${bam}"
+    samtools index "${bam}" "${bam.baseName}.bai"
     """
 
 }

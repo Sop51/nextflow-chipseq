@@ -1,0 +1,9 @@
+name: macs2-env
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - pip
+    - pip:
+        - macs2
