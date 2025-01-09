@@ -15,7 +15,7 @@ process MACS2 {
 
     script:
     """
-    macs2 callpeak -t "${trt_bam}" -c "${ctrl_bam}" --broad --qvalue 1e-5 -g mm -N "${trt_bam.baseName}"
+    macs2 callpeak -t "${trt_bam}" -c "${ctrl_bam}" --broad --qvalue 1e-5 -g mm -n "${trt_bam.baseName}"
     """
 
 }
@@ -50,8 +50,12 @@ workflow {
 
     bai_files = Channel.fromPath("${params.srt_bams}/*.bai")
 
-   //BAM_COVERAGE(aligned_srt_files, bai_files)
+    control_file = Channel.value("${params.ctrl_bam}")
 
+    //BAM_COVERAGE(aligned_srt_files, bai_files)
 
+    //MACS2(aligned_srt_files, control_file)
+
+    
 
 }
